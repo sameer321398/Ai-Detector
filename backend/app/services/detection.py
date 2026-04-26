@@ -3,9 +3,14 @@ import numpy as np
 import base64
 import os
 
+import torch
+
 # Set YOLO to use the temporary directory on Render to prevent config warnings
 os.environ["YOLO_CONFIG_DIR"] = "/tmp"
 os.environ["YOLO_DATA_DIR"] = "/tmp"
+
+# Prevent PyTorch from spawning too many threads on small instances (prevents freezing)
+torch.set_num_threads(1)
 
 from ultralytics import YOLO
 

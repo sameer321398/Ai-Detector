@@ -9,19 +9,24 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
-            # Receive frame as bytes
-            data = await websocket.receive_bytes()
-            
-            # Process frame using YOLO detector
-            results, processed_img_base64 = detector.process_frame(data)
-            
-            # Send results back
-            response = {
-                "image": processed_img_base64,
-                "detections": results.get("detections", [])
-            }
-            await websocket.send_text(json.dumps(response))
-            
+            try:
+                # Receive frame as bytes
+                data = await websocket.receive_bytes()
+                
+                # Process frame using YOLO detector
+                results, processed_img_base64 = detector.process_frame(data)
+                
+                # Send results back
+                response = {
+                    "image": processed_img_base64,
+                    "detections": results.get("detections", [])
+                }
+                await websocket.send_text(json.dumps(response))
+            except Exception as loop_e:
+                print(f"Error processing frame: {loop_e}")
+                # Send a blank response or error to keep pipeline moving
+                await websocket.send_text(json.dumps({"image": "", "detections": []}))
+                
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:
