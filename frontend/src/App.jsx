@@ -15,7 +15,6 @@ function App() {
   const streamRef = useRef(null);
   const animationFrameRef = useRef(null);
   const isStreamingRef = useRef(false);
-  const isWaitingForFrameRef = useRef(false); // Track if we are waiting for a server response
 
   const startStream = async () => {
     try {
@@ -50,7 +49,7 @@ function App() {
       };
       
       wsRef.current.onmessage = (event) => {
-        isWaitingForFrameRef.current = false; // Server finished processing, we can send next frame!
+        setDebugInfo(prev => ({ ...prev, received: prev.received + 1 }));
         const data = JSON.parse(event.data);
         if (data.image) {
           setProcessedImg(`data:image/jpeg;base64,${data.image}`);
@@ -114,7 +113,7 @@ function App() {
       setDebugInfo(prev => ({ ...prev, readyState: video.readyState, vWidth: video.videoWidth }));
     }
     
-    if (!isWaitingForFrameRef.current && video && canvas && video.readyState >= 2 && video.videoWidth > 0) {
+    if (video && canvas && video.readyState >= 2 && video.videoWidth > 0) {
       // Downscale to 320x240 to save bandwidth and drastically reduce backend memory usage
       const targetWidth = 320;
       const targetHeight = 240;
@@ -127,23 +126,18 @@ function App() {
       // Send frame as JPEG blob
       canvas.toBlob((blob) => {
         if (blob && wsRef.current.readyState === WebSocket.OPEN) {
-          isWaitingForFrameRef.current = true; // Block new frames until this one returns
           wsRef.current.send(blob);
-          
-          // Failsafe: if the server drops the frame or takes too long, unblock after 500ms
-          setTimeout(() => {
-            isWaitingForFrameRef.current = false;
-          }, 500);
+          setDebugInfo(prev => ({ ...prev, sent: prev.sent + 1 }));
         }
       }, 'image/jpeg', 0.6); // Slightly compressed to improve latency
     }
     
-    // Check frequently (30 FPS), but only actually send if the server isn't busy
+    // Throttle frames to ~15 FPS to provide a smooth live video feed
     setTimeout(() => {
       if (isStreamingRef.current) {
         animationFrameRef.current = requestAnimationFrame(sendFrames);
       }
-    }, 1000 / 30);
+    }, 1000 / 15);
   };
 
   useEffect(() => {
