@@ -32,8 +32,8 @@ class YOLODetector:
         if img is None:
             return {}, ""
 
-        # Perform detection
-        results = self.model(img, verbose=False)
+        # Perform detection with heavily reduced image size to prevent Render free-tier crashes
+        results = self.model(img, verbose=False, imgsz=320)
         
         # Parse results and draw boxes
         detections = []

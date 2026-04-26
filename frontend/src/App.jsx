@@ -114,10 +114,14 @@ function App() {
     }
     
     if (video && canvas && video.readyState >= 2 && video.videoWidth > 0) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // Downscale to 320x240 to save bandwidth and drastically reduce backend memory usage
+      const targetWidth = 320;
+      const targetHeight = 240;
+      
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
       
       // Send frame as JPEG blob
       canvas.toBlob((blob) => {
