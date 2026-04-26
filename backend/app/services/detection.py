@@ -49,7 +49,8 @@ class YOLODetector:
             classes_scores = row[4:]
             max_score = np.amax(classes_scores)
             
-            if max_score > 0.3:
+            # Lowered confidence threshold to 0.20 to catch more objects
+            if max_score > 0.20:
                 class_id = np.argmax(classes_scores)
                 
                 cx, cy, w, h = row[0:4]
@@ -64,7 +65,7 @@ class YOLODetector:
                 class_ids.append(class_id)
                 
         # Perform Non-Maximum Suppression to remove overlapping boxes
-        indices = cv2.dnn.NMSBoxes(boxes, scores, 0.3, 0.45)
+        indices = cv2.dnn.NMSBoxes(boxes, scores, 0.20, 0.45)
         
         detections = []
         if len(indices) > 0:
